@@ -45,13 +45,16 @@ class SlamPipeline(OdometryPipeline):
         n_scans: int = -1,
         jump: int = 0,
         refuse_scans: bool = False,
+        trajectory_fp: Path | None = None,
     ):
         super().__init__(dataset=dataset, config=None, n_scans=n_scans, jump=jump)
         self.slam_config = load_config(config_file)
         self.config = self.slam_config.kiss_icp_config()
         self.visualize = visualize
-        self.kiss_slam = KissSLAM(self.slam_config)
-        self.visualizer = RegistrationVisualizer() if self.visualize else StubVisualizer()
+        self.kiss_slam = KissSLAM(self.slam_config, trajectory_fp=trajectory_fp)
+        self.visualizer = (
+            RegistrationVisualizer() if self.visualize else StubVisualizer()
+        )
         self.refuse_scans = refuse_scans
 
     def run(self):
@@ -89,9 +92,13 @@ class SlamPipeline(OdometryPipeline):
                 self.kiss_slam.local_map_graph[0].pcd.point.positions.cpu().numpy(),
                 self.slam_config.odometry.mapping.voxel_size,
             )
-            occupancy_grid_mapper = OccupancyGridMapper(self.slam_config.occupancy_mapper)
+            occupancy_grid_mapper = OccupancyGridMapper(
+                self.slam_config.occupancy_mapper
+            )
             print("KissSLAM| Computing Occupancy Grid")
-            for idx in trange(self._first, self._last, unit=" frames", dynamic_ncols=True):
+            for idx in trange(
+                self._first, self._last, unit=" frames", dynamic_ncols=True
+            ):
                 scan, _ = self._next(idx)
                 occupancy_grid_mapper.integrate_frame(
                     scan, ref_ground_alignment @ self.poses[idx - self._first]
@@ -108,7 +115,9 @@ class SlamPipeline(OdometryPipeline):
     def _write_local_maps(self):
         local_maps_dir = os.path.join(self.results_dir, "local_maps")
         os.makedirs(local_maps_dir, exist_ok=True)
-        self.kiss_slam.optimizer.write_graph(os.path.join(local_maps_dir, "local_map_graph.g2o"))
+        self.kiss_slam.optimizer.write_graph(
+            os.path.join(local_maps_dir, "local_map_graph.g2o")
+        )
         plys_dir = os.path.join(local_maps_dir, "plys")
         os.makedirs(plys_dir, exist_ok=True)
         print("KissSLAM| Writing Local Maps on Disk")
@@ -118,7 +127,9 @@ class SlamPipeline(OdometryPipeline):
 
     def _evaluate_closures(self):
         self.results.append(
-            desc="Number of closures found", units="closures", value=len(self.kiss_slam.closures)
+            desc="Number of closures found",
+            units="closures",
+            value=len(self.kiss_slam.closures),
         )
 
     def _write_closures(self):

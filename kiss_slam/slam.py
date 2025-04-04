@@ -13,6 +13,8 @@
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
 
+from pathlib import Path
+
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,6 +32,8 @@ from kiss_slam.loop_closer import LoopCloser
 from kiss_slam.pose_graph_optimizer import PoseGraphOptimizer
 from kiss_slam.voxel_map import VoxelMap
 
+from .stub_odometry import StubOdometry
+
 
 def transform_points(pcd, T):
     R = T[:3, :3]
@@ -38,9 +42,11 @@ def transform_points(pcd, T):
 
 
 class KissSLAM:
-    def __init__(self, config: KissSLAMConfig):
+    def __init__(self, config: KissSLAMConfig, trajectory_fp: Path | None):
         self.config = config
-        self.odometry = KissICP(config.kiss_icp_config())
+        # self.odometry = KissICP(config.kiss_icp_config())
+        assert trajectory_fp is not None
+        self.odometry = StubOdometry(config.kiss_icp_config(), trajectory_fp)
         self.closer = LoopCloser(config.loop_closer)
         local_map_config = self.config.local_mapper
         self.local_map_voxel_size = local_map_config.voxel_size
@@ -48,7 +54,9 @@ class KissSLAM:
         self.local_map_graph = LocalMapGraph()
         self.local_map_splitting_distance = local_map_config.splitting_distance
         self.optimizer = PoseGraphOptimizer(config.pose_graph_optimizer)
-        self.optimizer.add_variable(self.local_map_graph.last_id, self.local_map_graph.last_keypose)
+        self.optimizer.add_variable(
+            self.local_map_graph.last_id, self.local_map_graph.last_keypose
+        )
         self.optimizer.fix_variable(self.local_map_graph.last_id)
         self.closures = []
 
@@ -100,7 +108,9 @@ class KissSLAM:
         self.local_map_graph.finalize_local_map(self.voxel_grid)
         self.voxel_grid.clear()
         self.voxel_grid.add_points(transformed_local_map)
-        self.optimizer.add_variable(self.local_map_graph.last_id, self.local_map_graph.last_keypose)
+        self.optimizer.add_variable(
+            self.local_map_graph.last_id, self.local_map_graph.last_keypose
+        )
         self.optimizer.add_factor(
             self.local_map_graph.last_id, query_id, relative_motion, np.eye(6)
         )

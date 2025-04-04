@@ -29,6 +29,7 @@
 #include <Eigen/Core>
 #include <memory>
 #include <pose_graph_optimizer.hpp>
+#include <sophus/se3.hpp>
 #include <vector>
 
 #include "occupancy_mapper.hpp"
@@ -78,4 +79,13 @@ PYBIND11_MODULE(kiss_slam_pybind, m) {
         .def("_integrate_frame", &OccupancyMapper::IntegrateFrame, "pointcloud"_a, "pose"_a)
         .def("_get_active_voxels", &OccupancyMapper::GetOccupancyInformation)
         .def("_save_occupancy_volume", &OccupancyMapper::SaveOccupancyVolume, "filename"_a);
+
+    m.def(
+        "_interpolate_se3d",
+        [](double t, const Eigen::Matrix4d &mat1, const Eigen::Matrix4d &mat2) -> Eigen::Matrix4d {
+            const Sophus::SE3d pose1(mat1);
+            const Sophus::SE3d pose2(mat2);
+            return (pose1 * Sophus::SE3d::exp(t * (pose1.inverse() * pose2).log())).matrix();
+        },
+        "t"_a, "mat1"_a, "mat2"_a, "Interpolate between two SE(3) poses");
 }

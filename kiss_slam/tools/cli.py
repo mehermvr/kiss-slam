@@ -124,6 +124,15 @@ def kiss_slam(
         help="[Optional] For Ouster pcap dataloader, specify metadata json file path explicitly",
         rich_help_panel="Additional Options",
     ),
+    trajectory_fp: Optional[Path] = typer.Option(
+        None,
+        "--trajectory",
+        "-t",
+        exists=True,
+        show_default=False,
+        help="[Optional] Path to TUM-format trajectory file for StubOdometry initialization",
+        rich_help_panel="Additional Options",
+    ),
 ):
     # Attempt to guess some common file extensions to avoid using the --dataloader flag
     if not dataloader:
@@ -152,6 +161,7 @@ def kiss_slam(
         n_scans=n_scans,
         jump=jump,
         refuse_scans=refuse_scans,
+        trajectory_fp=trajectory_fp,
     ).run().print()
 
 
