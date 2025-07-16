@@ -64,6 +64,13 @@ cd kiss-slam
 make editable
 ```
 
+### Paper Results
+As we decided to continue developing **KISS-SLAM** beyond the scope of the IROS paper, we created a ``git tag`` so that researchers can consistently reproduce the results presented in the publication. To checkout at this tag, you can run the following:
+```sh
+git checkout IROS25
+```
+Our development aims to surpass the performance of **KISS-SLAM** beyond the original results presented in the paper.
+
 ## Citation
 If you use this library for any academic work, please cite our original paper:
 ```bib
