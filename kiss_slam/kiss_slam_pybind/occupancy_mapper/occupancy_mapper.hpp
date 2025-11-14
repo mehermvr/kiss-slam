@@ -35,7 +35,7 @@ using Vector3iVector = std::vector<Eigen::Vector3i>;
 namespace occupancy_mapper {
 class OccupancyMapper {
 public:
-    OccupancyMapper(const float resolution, const float max_range);
+    OccupancyMapper(const float resolution);
     ~OccupancyMapper() = default;
 
     void IntegrateFrame(const Vector3fVector &pointcloud, const Eigen::Matrix4f &pose);
@@ -50,7 +50,6 @@ private:
     void Bresenham3DLine(const Bonxai::CoordT &start_coord, const Bonxai::CoordT &end_coord);
     void UpdateVoxelOccupancy(const Bonxai::CoordT &coord, const float value);
 
-    float max_range_ = 0.0f;
     Bonxai::VoxelGrid<float> map_;
     using AccessorType = typename Bonxai::VoxelGrid<float>::Accessor;
     AccessorType accessor_;

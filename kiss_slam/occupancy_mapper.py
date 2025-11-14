@@ -38,9 +38,7 @@ class OccupancyGridMapper:
         config: OccupancyMapperConfig,
     ):
         self.config = config
-        self.occupancy_mapping_pipeline = kiss_slam_pybind._OccupancyMapper(
-            self.config.resolution, self.config.max_range
-        )
+        self.occupancy_mapping_pipeline = kiss_slam_pybind._OccupancyMapper(self.config.resolution)
 
     def integrate_frame(self, frame: np.ndarray, pose: np.ndarray):
         frame_downsampled = voxel_down_sample(frame, self.config.resolution).astype(np.float32)

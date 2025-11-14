@@ -41,8 +41,8 @@ inline float LogOddsOccupied(const float probability) {
 }  // namespace
 
 namespace occupancy_mapper {
-OccupancyMapper::OccupancyMapper(const float resolution, const float max_range)
-    : max_range_(max_range), map_(resolution), accessor_(map_.createAccessor()) {}
+OccupancyMapper::OccupancyMapper(const float resolution)
+    : map_(resolution), accessor_(map_.createAccessor()) {}
 
 void OccupancyMapper::IntegrateFrame(const Vector3fVector &pointcloud,
                                      const Eigen::Matrix4f &pose) {
@@ -50,12 +50,9 @@ void OccupancyMapper::IntegrateFrame(const Vector3fVector &pointcloud,
     const Eigen::Vector3f &t = pose.block<3, 1>(0, 3);
     const auto start_coord = map_.posToCoord(t);
     std::for_each(pointcloud.cbegin(), pointcloud.cend(), [&](const Eigen::Vector3f &point) {
-        const auto point_range = point.norm();
-        if (point_range < max_range_) {
-            const Eigen::Vector3f point_tf = R * point + t;
-            const auto end_coord = map_.posToCoord(point_tf);
-            Bresenham3DLine(start_coord, end_coord);
-        }
+        const Eigen::Vector3f point_tf = R * point + t;
+        const auto end_coord = map_.posToCoord(point_tf);
+        Bresenham3DLine(start_coord, end_coord);
     });
 }
 

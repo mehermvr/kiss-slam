@@ -83,18 +83,25 @@ class SlamPipeline(OdometryPipeline):
 
     def _global_mapping(self):
         if self.refuse_scans:
+            from kiss_icp.preprocess import get_preprocessor
+
             if hasattr(self._dataset, "reset"):
                 self._dataset.reset()
             ref_ground_alignment = map_closures.align_map_to_local_ground(
                 self.kiss_slam.local_map_graph[0].pcd.point.positions.cpu().numpy(),
                 self.slam_config.odometry.mapping.voxel_size,
             )
+            deskewing_deltas = np.vstack(
+                (np.eye(4)[None], np.linalg.inv(self.poses[:-1]) @ self.poses[1:])
+            )
+            preprocessor = get_preprocessor(self.config)
             occupancy_grid_mapper = OccupancyGridMapper(self.slam_config.occupancy_mapper)
             print("KissSLAM| Computing Occupancy Grid")
             for idx in trange(self._first, self._last, unit=" frames", dynamic_ncols=True):
-                scan, _ = self._next(idx)
+                scan, timestamps = self._next(idx)
+                deskewed_scan = preprocessor.preprocess(scan, timestamps, deskewing_deltas[idx])
                 occupancy_grid_mapper.integrate_frame(
-                    scan, ref_ground_alignment @ self.poses[idx - self._first]
+                    deskewed_scan, ref_ground_alignment @ self.poses[idx - self._first]
                 )
             occupancy_grid_mapper.compute_3d_occupancy_information()
             occupancy_grid_mapper.compute_2d_occupancy_information()
