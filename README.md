@@ -74,13 +74,13 @@ Our development aims to surpass the performance of **KISS-SLAM** beyond the orig
 ## Citation
 If you use this library for any academic work, please cite our original paper:
 ```bib
-@article{kiss2025arxiv,
-  author   = {T. Guadagnino and B. Mersch and S. Gupta and I. Vizzo and G. Grisetti and C. Stachniss},
-  title    = {{KISS-SLAM: A Simple, Robust, and Accurate 3D LiDAR SLAM System With Enhanced Generalization Capabilities}},
-  journal  = {arXiv preprint},
-  year     = 2025,
-  volume   = {arXiv:2503.12660},
-  url      = {https://arxiv.org/pdf/2503.12660},
+@INPROCEEDINGS{kiss2025iros,
+  author    = {Guadagnino, Tiziano and Mersch, Benedikt and Gupta, Saurabh and Vizzo, Ignacio and Grisetti, Giorgio and Stachniss, Cyrill},
+  booktitle = {2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  title     = {{KISS-SLAM: A Simple, Robust, and Accurate 3D LiDAR SLAM System With Enhanced Generalization Capabilities}},
+  year      = {2025},
+  pages     = {5363-5370},
+  doi       = {10.1109/IROS60139.2025.11246613}
 }
 ```
 
