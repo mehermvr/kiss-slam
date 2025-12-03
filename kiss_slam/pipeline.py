@@ -87,10 +87,7 @@ class SlamPipeline(OdometryPipeline):
 
             if hasattr(self._dataset, "reset"):
                 self._dataset.reset()
-            ref_ground_alignment = map_closures.align_map_to_local_ground(
-                self.kiss_slam.local_map_graph[0].pcd.point.positions.cpu().numpy(),
-                self.slam_config.odometry.mapping.voxel_size,
-            )
+            ref_ground_alignment = self.kiss_slam.closer.detector.get_ground_alignment_from_id(0)
             deskewing_deltas = np.vstack(
                 (np.eye(4)[None], np.linalg.inv(self.poses[:-1]) @ self.poses[1:])
             )
