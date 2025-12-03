@@ -27,7 +27,6 @@ from typing import Optional
 
 import numpy as np
 from kiss_icp.pipeline import OdometryPipeline
-from map_closures import map_closures
 from tqdm import tqdm, trange
 
 from kiss_slam.config import load_config
