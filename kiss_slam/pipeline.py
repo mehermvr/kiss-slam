@@ -88,7 +88,11 @@ class SlamPipeline(OdometryPipeline):
                 self._dataset.reset()
             ref_ground_alignment = self.kiss_slam.closer.detector.get_ground_alignment_from_id(0)
             deskewing_deltas = np.vstack(
-                (np.eye(4)[None], np.linalg.inv(self.poses[:-1]) @ self.poses[1:])
+                (
+                    np.eye(4)[None],
+                    np.eye(4)[None],
+                    np.linalg.inv(self.poses[:-2]) @ self.poses[1:-1],
+                )
             )
             preprocessor = get_preprocessor(self.config)
             occupancy_grid_mapper = OccupancyGridMapper(self.slam_config.occupancy_mapper)
