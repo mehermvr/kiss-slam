@@ -75,7 +75,6 @@ void OccupancyMapper::UpdateVoxelOccupancy(const Bonxai::CoordT &coord, const fl
     float *logodds = accessor_.value(coord);
     *logodds += value;
 }
-
 void OccupancyMapper::Bresenham3DLine(const Bonxai::CoordT &start_coord,
                                       const Bonxai::CoordT &end_coord) {
     const auto ray = end_coord - start_coord;
