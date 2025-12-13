@@ -115,21 +115,22 @@ class KissSLAM:
         return poses
 
     def fine_grained_optimization(self):
-        pgo = PoseGraphOptimizer(self.config.pose_graph_optimizer)
-        id_ = 0
-        pgo.add_variable(id_, self.local_map_graph[id_].keypose)
-        pgo.fix_variable(id_)
-        for node in self.local_map_graph.local_maps():
-            odometry_factors = [
-                np.linalg.inv(T0) @ T1
-                for T0, T1 in zip(node.local_trajectory[:-1], node.local_trajectory[1:])
-            ]
-            for i, factor in enumerate(odometry_factors):
-                pgo.add_variable(id_ + 1, node.keypose @ node.local_trajectory[i + 1])
-                pgo.add_factor(id_ + 1, id_, factor, np.eye(6))
-                id_ += 1
-            pgo.fix_variable(id_ - 1)
-
-        pgo.optimize()
+        # pgo = PoseGraphOptimizer(self.config.pose_graph_optimizer)
+        # id_ = 0
+        # pgo.add_variable(id_, self.local_map_graph[id_].keypose)
+        # pgo.fix_variable(id_)
+        # for node in self.local_map_graph.local_maps():
+        #     odometry_factors = [
+        #         np.linalg.inv(T0) @ T1
+        #         for T0, T1 in zip(node.local_trajectory[:-1], node.local_trajectory[1:])
+        #     ]
+        #     for i, factor in enumerate(odometry_factors):
+        #         pgo.add_variable(id_ + 1, node.keypose @ node.local_trajectory[i + 1])
+        #         pgo.add_factor(id_ + 1, id_, factor, np.eye(6))
+        #         id_ += 1
+        #     pgo.fix_variable(id_ - 1)
+        #
+        # pgo.optimize()
+        pgo = self.optimizer
         poses = [x for x in pgo.estimates().values()]
         return poses, pgo

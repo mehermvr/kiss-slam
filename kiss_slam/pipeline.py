@@ -80,7 +80,7 @@ class SlamPipeline(OdometryPipeline):
             self.visualizer.update(self.kiss_slam)
         self.kiss_slam.generate_new_node()
         self.kiss_slam.local_map_graph.erase_last_local_map()
-        # self.poses, self.pose_graph = self.kiss_slam.fine_grained_optimization()
+        self.poses, self.pose_graph = self.kiss_slam.fine_grained_optimization()
         self.poses = np.array(self.poses)
 
     def _global_mapping(self):
