@@ -51,7 +51,9 @@ class SlamPipeline(OdometryPipeline):
         self.config = self.slam_config.kiss_icp_config()
         self.visualize = visualize
         self.kiss_slam = KissSLAM(self.slam_config)
-        self.visualizer = RegistrationVisualizer() if self.visualize else StubVisualizer()
+        self.visualizer = (
+            RegistrationVisualizer() if self.visualize else StubVisualizer()
+        )
         self.refuse_scans = refuse_scans
 
     def run(self):
@@ -60,13 +62,13 @@ class SlamPipeline(OdometryPipeline):
         self._evaluate_closures()
         self._create_output_dir()
         self._write_result_poses()
-        self._write_gt_poses()
+        # self._write_gt_poses()
         self._write_cfg()
         self._write_log()
         self._write_graph()
         self._write_closures()
-        self._write_local_maps()
-        self._global_mapping()
+        # self._write_local_maps()
+        # self._global_mapping()
         return self.results
 
     def _run_pipeline(self):
@@ -78,7 +80,7 @@ class SlamPipeline(OdometryPipeline):
             self.visualizer.update(self.kiss_slam)
         self.kiss_slam.generate_new_node()
         self.kiss_slam.local_map_graph.erase_last_local_map()
-        self.poses, self.pose_graph = self.kiss_slam.fine_grained_optimization()
+        # self.poses, self.pose_graph = self.kiss_slam.fine_grained_optimization()
         self.poses = np.array(self.poses)
 
     def _global_mapping(self):
@@ -89,9 +91,13 @@ class SlamPipeline(OdometryPipeline):
                 self.kiss_slam.local_map_graph[0].pcd.point.positions.cpu().numpy(),
                 self.slam_config.odometry.mapping.voxel_size,
             )
-            occupancy_grid_mapper = OccupancyGridMapper(self.slam_config.occupancy_mapper)
+            occupancy_grid_mapper = OccupancyGridMapper(
+                self.slam_config.occupancy_mapper
+            )
             print("KissSLAM| Computing Occupancy Grid")
-            for idx in trange(self._first, self._last, unit=" frames", dynamic_ncols=True):
+            for idx in trange(
+                self._first, self._last, unit=" frames", dynamic_ncols=True
+            ):
                 scan, _ = self._next(idx)
                 occupancy_grid_mapper.integrate_frame(
                     scan, ref_ground_alignment @ self.poses[idx - self._first]
@@ -108,7 +114,9 @@ class SlamPipeline(OdometryPipeline):
     def _write_local_maps(self):
         local_maps_dir = os.path.join(self.results_dir, "local_maps")
         os.makedirs(local_maps_dir, exist_ok=True)
-        self.kiss_slam.optimizer.write_graph(os.path.join(local_maps_dir, "local_map_graph.g2o"))
+        self.kiss_slam.optimizer.write_graph(
+            os.path.join(local_maps_dir, "local_map_graph.g2o")
+        )
         plys_dir = os.path.join(local_maps_dir, "plys")
         os.makedirs(plys_dir, exist_ok=True)
         print("KissSLAM| Writing Local Maps on Disk")
@@ -118,7 +126,9 @@ class SlamPipeline(OdometryPipeline):
 
     def _evaluate_closures(self):
         self.results.append(
-            desc="Number of closures found", units="closures", value=len(self.kiss_slam.closures)
+            desc="Number of closures found",
+            units="closures",
+            value=len(self.kiss_slam.closures),
         )
 
     def _write_closures(self):
