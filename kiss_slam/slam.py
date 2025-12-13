@@ -48,7 +48,9 @@ class KissSLAM:
         self.local_map_graph = LocalMapGraph()
         self.local_map_splitting_distance = local_map_config.splitting_distance
         self.optimizer = PoseGraphOptimizer(config.pose_graph_optimizer)
-        self.optimizer.add_variable(self.local_map_graph.last_id, self.local_map_graph.last_keypose)
+        self.optimizer.add_variable(
+            self.local_map_graph.last_id, self.local_map_graph.last_keypose
+        )
         self.optimizer.fix_variable(self.local_map_graph.last_id)
         self.closures = []
 
@@ -75,7 +77,7 @@ class KissSLAM:
         if is_good:
             self.closures.append((source_id, target_id))
             self.optimizer.add_factor(source_id, target_id, pose_constraint, np.eye(6))
-            self.optimize_pose_graph()
+            # self.optimize_pose_graph()
 
     def optimize_pose_graph(self):
         self.optimizer.optimize()
@@ -100,7 +102,9 @@ class KissSLAM:
         self.local_map_graph.finalize_local_map(self.voxel_grid)
         self.voxel_grid.clear()
         self.voxel_grid.add_points(transformed_local_map)
-        self.optimizer.add_variable(self.local_map_graph.last_id, self.local_map_graph.last_keypose)
+        self.optimizer.add_variable(
+            self.local_map_graph.last_id, self.local_map_graph.last_keypose
+        )
         self.optimizer.add_factor(
             self.local_map_graph.last_id, query_id, relative_motion, np.eye(6)
         )
