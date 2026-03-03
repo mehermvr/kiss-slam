@@ -71,7 +71,9 @@ PYBIND11_MODULE(kiss_slam_pybind, m) {
         .def("_point_cloud", &VoxelMap::Pointcloud)
         .def("_clear", &VoxelMap::Clear)
         .def("_num_voxels", &VoxelMap::NumVoxels)
-        .def("_per_voxel_point_and_normal", &VoxelMap::PerVoxelPointAndNormal);
+        .def("_per_voxel_point_and_normal", &VoxelMap::PerVoxelPointAndNormal)
+        .def("_remove_far_away_points", &VoxelMap::RemovePointsFarFromLocation, "origin"_a,
+             "max_distance"_a);
 
     py::class_<OccupancyMapper> grid_mapper(m, "_OccupancyMapper", "Don't use this");
     grid_mapper.def(py::init<float>(), "resolution"_a)

@@ -21,8 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import numpy as np
-from kiss_icp.kiss_icp import KissICP
 from kiss_icp.voxelization import voxel_down_sample
+from rko_lio import LIOPipeline
 
 from kiss_slam.config import KissSLAMConfig
 from kiss_slam.local_map_graph import LocalMapGraph
@@ -40,17 +40,19 @@ def transform_points(pcd, T):
 class KissSLAM:
     def __init__(self, config: KissSLAMConfig):
         self.config = config
-        self.odometry = KissICP(config.kiss_icp_config())
+        self.odometry = LIOPipeline(config.rko_lio.to_rko_lio())
         self.closer = LoopCloser(config.loop_closer)
-        local_map_config = self.config.local_mapper
-        self.local_map_voxel_size = local_map_config.voxel_size
-        self.voxel_grid = VoxelMap(self.local_map_voxel_size)
+        self.voxel_grid = VoxelMap(self.config.local_mapper.voxel_size)
         self.local_map_graph = LocalMapGraph()
-        self.local_map_splitting_distance = local_map_config.splitting_distance
         self.optimizer = PoseGraphOptimizer(config.pose_graph_optimizer)
-        self.optimizer.add_variable(self.local_map_graph.last_id, self.local_map_graph.last_keypose)
+        self.optimizer.add_variable(
+            self.local_map_graph.last_id, self.local_map_graph.last_keypose
+        )
         self.optimizer.fix_variable(self.local_map_graph.last_id)
         self.closures = []
+        self.current_local_map_pose = np.eye(4)
+        self.current_odom_pose = np.eye(4)
+        self.frame_to_local_map_pose = np.eye(4)
 
     def get_closures(self):
         return self.closures
@@ -58,15 +60,39 @@ class KissSLAM:
     def get_keyposes(self):
         return list(self.local_map_graph.keyposes())
 
-    def process_scan(self, frame, timestamps):
-        deskewed_frame, _ = self.odometry.register_frame(frame, timestamps)
-        current_pose = self.odometry.last_pose
-        mapping_frame = voxel_down_sample(deskewed_frame, self.local_map_voxel_size)
-        self.voxel_grid.integrate_frame(mapping_frame, current_pose)
-        self.local_map_graph.last_local_map.local_trajectory.append(current_pose)
-        traveled_distance = np.linalg.norm(current_pose[:3, -1])
-        if traveled_distance > self.local_map_splitting_distance:
+    def process_data(self, data):
+        kind, data_dict = data
+
+        if kind == "imu":
+            self.odometry.add_imu(**data_dict)
+            return
+        # kind has to be lidar
+        start_time = data_dict["start_time"]
+        end_time = data_dict["end_time"]
+        scan = data_dict["scan"]
+        timestamps = data_dict["timestamps"]
+
+        deskewed_frame = self.odometry.register_scan(
+            start_time, end_time, scan, timestamps
+        )
+        if deskewed_frame is None:
+            return
+
+        self.current_odom_pose = self.odometry.lio.pose()
+        self.frame_to_local_map_pose = (
+            np.linalg.inv(self.current_local_map_pose) @ self.current_odom_pose
+        )
+        # mapping_frame = voxel_down_sample(
+        #     deskewed_frame, self.config.local_mapper.voxel_size
+        # )
+        self.voxel_grid.integrate_frame(deskewed_frame, self.frame_to_local_map_pose)
+        self.local_map_graph.last_local_map.local_trajectory.append(
+            self.frame_to_local_map_pose
+        )
+        traveled_distance = np.linalg.norm(self.frame_to_local_map_pose[:3, -1])
+        if traveled_distance > self.config.local_mapper.splitting_distance:
             self.generate_new_node()
+            self.current_local_map_pose = self.current_odom_pose
 
     def compute_closures(self, query_id, query):
         is_good, source_id, target_id, pose_constraint = self.closer.compute(
@@ -84,23 +110,27 @@ class KissSLAM:
             self.local_map_graph[id_].keypose = np.copy(pose)
 
     def generate_new_node(self):
-        points = self.odometry.local_map.point_cloud()
-        # Reset odometry
+        # points = self.odometry.lio.map_point_cloud()
+        query_points = self.voxel_grid.point_cloud()
         last_local_map = self.local_map_graph.last_local_map
-        relative_motion = last_local_map.local_trajectory[-1]
-        inverse_relative_motion = np.linalg.inv(relative_motion)
-        transformed_local_map = transform_points(points, inverse_relative_motion)
-
-        self.odometry.local_map.clear()
-        self.odometry.local_map.add_points(transformed_local_map)
-        self.odometry.last_pose = np.eye(4)
 
         query_id = last_local_map.id
-        query_points = self.voxel_grid.point_cloud()
         self.local_map_graph.finalize_local_map(self.voxel_grid)
+
+        relative_motion = last_local_map.local_trajectory[-1]
+        inverse_relative_motion = np.linalg.inv(relative_motion)
+        self.voxel_grid.remove_far_away_points(
+            self.frame_to_local_map_pose[:3, -1],
+            self.config.local_mapper.splitting_distance,
+        )
+        pts_to_keep = self.voxel_grid.point_cloud()
+        transformed_local_map = transform_points(pts_to_keep, inverse_relative_motion)
         self.voxel_grid.clear()
         self.voxel_grid.add_points(transformed_local_map)
-        self.optimizer.add_variable(self.local_map_graph.last_id, self.local_map_graph.last_keypose)
+
+        self.optimizer.add_variable(
+            self.local_map_graph.last_id, self.local_map_graph.last_keypose
+        )
         self.optimizer.add_factor(
             self.local_map_graph.last_id, query_id, relative_motion, np.eye(6)
         )

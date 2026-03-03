@@ -26,12 +26,18 @@ from typing import Optional
 import typer
 import yaml
 from rko_lio.config import PipelineConfig as RKOPipelineConfig
-from rko_lio.dataloaders import available_dataloaders, dataloader_factory
+from rko_lio.dataloaders import (
+    LidarIMUSequencer,
+    available_dataloaders,
+    dataloader_factory,
+)
 from rko_lio.util import (
     error_and_exit,
     info,
     warning,
 )
+
+from kiss_slam.config import load_config
 
 
 def name_callback(value: str):
@@ -149,28 +155,20 @@ def kiss_slam(
         rich_help_panel="Disk logging options",
     ),
 ):
-    user_rko_config = {}
-    if config_fp:
-        with open(config_fp, "r") as f:
+    slam_config = load_config(config_fp)
 
-            user_rko_config.update(yaml.safe_load(f))
-    user_rko_config["log_dir"] = log_dir or user_rko_config.get("log_dir", "results")
-    user_rko_config["run_name"] = run_name or user_rko_config.get(
-        "run_name", data_path.name
-    )
-
-    rko_lio_config = RKOPipelineConfig.from_dict(user_rko_config)
-
-    dataloader = dataloader_factory(
-        name=dataloader_name,
-        data_path=data_path,
-        sequence=sequence,
-        imu_topic=imu_topic,
-        lidar_topic=lidar_topic,
-        imu_frame_id=imu_frame,
-        lidar_frame_id=lidar_frame,
-        base_frame_id=base_frame,
-        timestamp_config=rko_lio_config.timestamps,
+    dataloader = LidarIMUSequencer(
+        dataloader_factory(
+            name=dataloader_name,
+            data_path=data_path,
+            sequence=sequence,
+            imu_topic=imu_topic,
+            lidar_topic=lidar_topic,
+            imu_frame_id=imu_frame,
+            lidar_frame_id=lidar_frame,
+            base_frame_id=base_frame,
+            timestamp_config=slam_config.rko_lio.timestamps.to_rko_lio(),
+        )
     )
     print("Loaded dataloader:", dataloader)
 
@@ -178,7 +176,7 @@ def kiss_slam(
 
     SlamPipeline(
         dataset=dataloader,
-        config=rko_lio_config.to_dict(),
+        config=slam_config,
         visualize=visualize,
         refuse_scans=refuse_scans,
     ).run().print()

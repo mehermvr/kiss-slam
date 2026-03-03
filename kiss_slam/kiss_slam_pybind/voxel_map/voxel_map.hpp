@@ -50,6 +50,7 @@ struct VoxelBlock {
     inline constexpr size_t size() const { return num_points; }
     auto cbegin() const { return points.cbegin(); }
     auto cend() const { return std::next(points.cbegin(), num_points); }
+    Eigen::Vector3f front() const { return points.front(); }
     std::array<Eigen::Vector3f, max_points_per_normal_computation> points;
     size_t num_points = 0;
 };
@@ -66,6 +67,8 @@ struct VoxelMap {
     size_t NumVoxels() const { return map_.size(); }
 
     std::tuple<Vector3fVector, Vector3fVector> PerVoxelPointAndNormal() const;
+
+    void RemovePointsFarFromLocation(const Eigen::Vector3f &origin, const float max_distance);
 
     float voxel_size_;
     float map_resolution_;

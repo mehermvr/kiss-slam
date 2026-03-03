@@ -51,6 +51,11 @@ class VoxelMap:
         points, normals = self.map._per_voxel_point_and_normal()
         # Reduce memory footprint
         pcd = o3d.t.geometry.PointCloud()
-        pcd.point.positions = o3d.core.Tensor(np.asarray(points), o3d.core.Dtype.Float32)
+        pcd.point.positions = o3d.core.Tensor(
+            np.asarray(points), o3d.core.Dtype.Float32
+        )
         pcd.point.normals = o3d.core.Tensor(np.asarray(normals), o3d.core.Dtype.Float32)
         return pcd
+
+    def remove_far_away_points(self, origin, max_distance):
+        self.map._remove_far_away_points(origin, max_distance)
