@@ -113,7 +113,6 @@ class KissSLAM:
             self.local_map_graph[id_].keypose = np.copy(pose)
 
     def generate_new_node(self):
-        # points = self.odometry.lio.map_point_cloud()
         query_points = self.voxel_grid.point_cloud()
         last_local_map = self.local_map_graph.last_local_map
 
@@ -122,12 +121,14 @@ class KissSLAM:
 
         relative_motion = last_local_map.local_trajectory[-1]
         inverse_relative_motion = np.linalg.inv(relative_motion)
-        self.voxel_grid.remove_far_away_points(
-            self.frame_to_local_map_pose[:3, -1],
-            self.config.local_mapper.splitting_distance,
-        )
-        pts_to_keep = self.voxel_grid.point_cloud()
-        transformed_local_map = transform_points(pts_to_keep, inverse_relative_motion)
+        # self.voxel_grid.remove_far_away_points(
+        #     self.frame_to_local_map_pose[:3, -1],
+        #     self.config.local_mapper.splitting_distance,
+        # )
+        # pts_to_keep = self.voxel_grid.point_cloud()
+        # transformed_local_map = transform_points(pts_to_keep, inverse_relative_motion)
+        odom_points = self.odometry.lio.map_point_cloud()
+        transformed_local_map = transform_points(odom_points, inverse_relative_motion)
         self.voxel_grid.clear()
         self.voxel_grid.add_points(transformed_local_map)
 
