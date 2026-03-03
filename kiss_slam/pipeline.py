@@ -160,7 +160,8 @@ class SlamPipeline:
         import matplotlib.pyplot as plt
 
         locations = [pose[:3, -1] for pose in self.poses]
-        loc_x, loc_y = [l[0] for l in locations], [l[1] for l in locations]
+        loc_x = [loc[0] for loc in locations]
+        loc_y = [loc[1] for loc in locations]
         plt.figure(figsize=(10, 8))
         plt.scatter(loc_x, loc_y, s=0.1, color="black")
         key_poses = self.kiss_slam.get_keyposes()
@@ -173,7 +174,13 @@ class SlamPipeline:
                 linewidth=1,
             )
         plt.axis("equal")
-        plt.savefig(output_dir / "trajectory.png", dpi=2000, bbox_inches="tight")
+        plt.tight_layout()
+        plt.savefig(
+            output_dir / "trajectory.png",
+            dpi=300,
+            bbox_inches="tight",
+            facecolor="white",
+        )
         plt.close()
 
         # Local maps
