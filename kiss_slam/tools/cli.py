@@ -25,7 +25,7 @@ from typing import Optional
 
 import typer
 import yaml
-from rko_lio.config import PipelineConfig as RKO_LIO_Config
+from rko_lio.config import PipelineConfig as RKOPipelineConfig
 from rko_lio.dataloaders import available_dataloaders, dataloader_factory
 from rko_lio.util import (
     error_and_exit,
@@ -149,19 +149,17 @@ def kiss_slam(
         rich_help_panel="Disk logging options",
     ),
 ):
-    user_rko_lio_config = {}
+    user_rko_config = {}
     if config_fp:
         with open(config_fp, "r") as f:
 
-            user_rko_lio_config.update(yaml.safe_load(f))
-    user_rko_lio_config["log_dir"] = log_dir or user_rko_lio_config.get(
-        "log_dir", "results"
-    )
-    user_rko_lio_config["run_name"] = run_name or user_rko_lio_config.get(
+            user_rko_config.update(yaml.safe_load(f))
+    user_rko_config["log_dir"] = log_dir or user_rko_config.get("log_dir", "results")
+    user_rko_config["run_name"] = run_name or user_rko_config.get(
         "run_name", data_path.name
     )
 
-    rko_lio_config = RKO_LIO_Config(**user_rko_lio_config)
+    rko_lio_config = RKOPipelineConfig.from_dict(user_rko_config)
 
     dataloader = dataloader_factory(
         name=dataloader_name,
@@ -172,7 +170,7 @@ def kiss_slam(
         imu_frame_id=imu_frame,
         lidar_frame_id=lidar_frame,
         base_frame_id=base_frame,
-        timestamp_processing_config=rko_lio_config.timestamps,
+        timestamp_config=rko_lio_config.timestamps,
     )
     print("Loaded dataloader:", dataloader)
 
