@@ -34,6 +34,7 @@ from rko_lio.dataloaders import (
 from rko_lio.util import (
     error_and_exit,
     info,
+    transform_to_quat_xyzw_xyz,
     warning,
 )
 
@@ -166,6 +167,36 @@ def kiss_slam(
         )
     )
     print("Loaded dataloader:", dataloader)
+
+    if (
+        slam_config.rko_lio.extrinsic_imu2base_quat_xyzw_xyz is None
+        or slam_config.rko_lio.extrinsic_lidar2base_quat_xyzw_xyz is None
+    ):
+        info("Extrinsics missing or not fully specified in config.")
+        dl_ext_imu2base, dl_ext_lidar2base = dataloader.extrinsics
+        if slam_config.rko_lio.extrinsic_imu2base_quat_xyzw_xyz is None:
+            slam_config.rko_lio.extrinsic_imu2base_quat_xyzw_xyz = (
+                transform_to_quat_xyzw_xyz(dl_ext_imu2base)
+            )
+        if slam_config.rko_lio.extrinsic_lidar2base_quat_xyzw_xyz is None:
+            slam_config.rko_lio.extrinsic_lidar2base_quat_xyzw_xyz = (
+                transform_to_quat_xyzw_xyz(dl_ext_lidar2base)
+            )
+
+    if (
+        slam_config.rko_lio.extrinsic_imu2base_quat_xyzw_xyz is None
+        or slam_config.rko_lio.extrinsic_lidar2base_quat_xyzw_xyz is None
+    ):
+        error_and_exit(
+            "Fatal: Could not obtain required IMU/Lidar extrinsics. Please specify in a config or as part of your data."
+        )
+
+    print("Resolved extrinsics:")
+    print("  IMU to Base:", slam_config.rko_lio.extrinsic_imu2base_quat_xyzw_xyz)
+    print(
+        "  Lidar to Base:",
+        slam_config.rko_lio.extrinsic_lidar2base_quat_xyzw_xyz,
+    )
 
     from kiss_slam.pipeline import SlamPipeline
 
