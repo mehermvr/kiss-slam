@@ -53,6 +53,7 @@ class KissSLAM:
         self.current_local_map_pose = np.eye(4)
         self.current_odom_pose = np.eye(4)
         self.frame_to_local_map_pose = np.eye(4)
+        self.scan_end_times = []
 
     def get_closures(self):
         return self.closures
@@ -77,6 +78,8 @@ class KissSLAM:
         )
         if deskewed_frame is None:
             return
+
+        self.scan_end_times.append(end_time)
 
         self.current_odom_pose = self.odometry.lio.pose()
         self.frame_to_local_map_pose = (

@@ -130,13 +130,6 @@ def kiss_slam(
         show_default=False,
         help="[Optional] Path to the configuration file",
     ),
-    log_results: bool = typer.Option(
-        False,
-        "--log",
-        "-l",
-        help="Log trajectory results to disk at 'log_dir' on completion",
-        rich_help_panel="Disk logging options",
-    ),
     log_dir: Path | None = typer.Option(
         None,
         "--log_dir",
@@ -156,6 +149,8 @@ def kiss_slam(
     ),
 ):
     slam_config = load_config(config_fp)
+    slam_config.out_dir = str(log_dir or Path("slam_output"))
+    slam_config.run_name = run_name or Path(data_path).name
 
     dataloader = LidarIMUSequencer(
         dataloader_factory(

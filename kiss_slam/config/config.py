@@ -102,11 +102,6 @@ class RkoLioPipelineConfig(BaseModel):
     timestamps: RkoLioTimestampConfig = RkoLioTimestampConfig()
     extrinsic_imu2base_quat_xyzw_xyz: Optional[List[float]] = None
     extrinsic_lidar2base_quat_xyzw_xyz: Optional[List[float]] = None
-    viz: bool = False
-    viz_every_n_frames: int = 20
-    dump_deskewed_scans: bool = False
-    log_dir: Path = Path("results")
-    run_name: Optional[str] = None
 
     def to_rko_lio(self) -> PipelineConfig:
         return PipelineConfig(
@@ -114,32 +109,21 @@ class RkoLioPipelineConfig(BaseModel):
             timestamps=self.timestamps.to_rko_lio(),
             extrinsic_imu2base_quat_xyzw_xyz=self.extrinsic_imu2base_quat_xyzw_xyz,
             extrinsic_lidar2base_quat_xyzw_xyz=self.extrinsic_lidar2base_quat_xyzw_xyz,
-            viz=self.viz,
-            viz_every_n_frames=self.viz_every_n_frames,
-            dump_deskewed_scans=self.dump_deskewed_scans,
-            log_dir=self.log_dir,
-            run_name=self.run_name,
+            viz=False,
+            dump_deskewed_scans=False,
         )
 
 
 class KissSLAMConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="kiss_slam_")
     out_dir: str = "slam_output"
+    run_name: Optional[str] = None
     # odometry: KissOdometryConfig = KissOdometryConfig()
     rko_lio: RkoLioPipelineConfig = RkoLioPipelineConfig()
     local_mapper: LocalMapperConfig = LocalMapperConfig()
     occupancy_mapper: OccupancyMapperConfig = OccupancyMapperConfig()
     loop_closer: LoopCloserConfig = LoopCloserConfig()
     pose_graph_optimizer: PoseGraphOptimizerConfig = PoseGraphOptimizerConfig()
-
-    # def kiss_icp_config(self) -> KISSConfig:
-    #     return KISSConfig(
-    #         out_dir=self.out_dir,
-    #         data=self.odometry.preprocessing,
-    #         registration=self.odometry.registration,
-    #         mapping=self.odometry.mapping,
-    #         adaptive_threshold=self.odometry.adaptive_threshold,
-    #     )
 
 
 class KissDumper(yaml.Dumper):
@@ -167,15 +151,10 @@ def load_config(config_file: Optional[Path]) -> KissSLAMConfig:
     config = KissSLAMConfig(**_yaml_source(config_file))
 
     # Use specified voxel size or compute one using the max range
-    # if config.odometry.mapping.voxel_size is None:
-    #     config.odometry.mapping.voxel_size = float(
-    #         config.odometry.preprocessing.max_range / 100.0
-    #     )
     if config.rko_lio.lio.voxel_size is None:
         config.rko_lio.lio.voxel_size = float(config.rko_lio.lio.max_range / 100.0)
 
     if config.occupancy_mapper.max_range is None:
-        # config.occupancy_mapper.max_range = config.odometry.preprocessing.max_range
         config.occupancy_mapper.max_range = config.rko_lio.lio.max_range
 
     return config
