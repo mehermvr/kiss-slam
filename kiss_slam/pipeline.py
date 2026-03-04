@@ -189,9 +189,9 @@ class SlamPipeline:
         self.kiss_slam.optimizer.write_graph(
             (local_maps_dir / "local_map_graph.g2o").as_posix()
         )
-        plys_dir = local_maps_dir / "plys"
-        plys_dir.mkdir(exist_ok=True)
-        print("KissSLAM| Writing Local Maps on Disk")
-        for local_map in tqdm(self.kiss_slam.local_map_graph.local_maps()):
-            filename = plys_dir / f"{local_map.id:06d}.ply"
-            local_map.write(str(filename))
+        # plys_dir = local_maps_dir / "plys"
+        # plys_dir.mkdir(exist_ok=True)
+        # print("KissSLAM| Writing Local Maps on Disk")
+        # for local_map in tqdm(self.kiss_slam.local_map_graph.local_maps()):
+        #     filename = plys_dir / f"{local_map.id:06d}.ply"
+        #     local_map.write(str(filename))
